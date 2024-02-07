@@ -7,20 +7,25 @@
 
 import UIKit
 import SwiftUI
+import CoreLocation
 
-class LoginViewController: UIViewController, UITextFieldDelegate {
+class LoginViewController: UIViewController, UITextFieldDelegate, CLLocationManagerDelegate {
+    
+    private let locationManager = CLLocationManager()
     
     lazy var emailLabel = makeLabel(text: "e-mail")
     lazy var emailTextField = makeTextField(placeholder: "e-mail")
     lazy var passwordLabel = makeLabel(text: "Пароль")
     lazy var passwordTextField = makeTextField(placeholder: "******")
     
-    let loginButton: UIButton = {
+    
+    private lazy var loginButton: UIButton = {
         let button = UIButton()
         button.backgroundColor = UIColor.buttonBackgroundColor
         button.setTitle("Вход", for: .normal)
         button.setTitleColor(.buttonTitleColor, for: .normal)
         button.layer.cornerRadius = 20
+        button.addTarget(self, action: #selector(loginButtonTapped), for: .touchUpInside)
         
         return button
     }()
@@ -54,9 +59,10 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        navigationItem.title = "Регистрация"
+        navigationItem.title = "Вход"
         view.backgroundColor = .systemBackground
         
+        requestLocationPermission()
         setupStuck()
         setupView()
         setupConstraints()
@@ -121,6 +127,26 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         return true
     }
     
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        if textField == emailTextField {
+            textField.autocapitalizationType = .none
+        }
+    }
+    
+    private func requestLocationPermission() {
+        locationManager.delegate = self
+        
+        if CLLocationManager.authorizationStatus() == .notDetermined {
+            locationManager.requestWhenInUseAuthorization()
+            print("Requesting location authorization...")
+        } else if CLLocationManager.authorizationStatus() == .authorizedWhenInUse {
+            locationManager.startUpdatingLocation()
+            print("Current location saved")
+        } else {
+            print("Location permission denied.")
+        }
+    }
+    
     private func keyboardAnimation() {
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
@@ -139,7 +165,23 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
             self.view.frame.origin.y = 0
         }
     }
-
+    
+    @objc func loginButtonTapped() {
+        guard let email = emailTextField.text, let password = passwordTextField.text else { return }
+        
+        Network.shared.login(email: email, password: password) { result in
+            switch result {
+            case .success(let authResponse):
+                print("Login succes")
+                DispatchQueue.main.async {
+                    let nearestCoffeeShopsViewController = NearestCoffeeShopsViewController(token: authResponse.token)
+                    self.navigationController?.pushViewController(nearestCoffeeShopsViewController, animated: true)
+                }
+            case .failure(let error):
+                print("Authentication failed with error: \(error)")
+            }
+        }
+    }
 }
 
 // MARK: - For Canvas
