@@ -19,5 +19,12 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Разрешите использовать ваше местоположение, чтобы мы могли определить ближайшие к вам кофейни.</string>
 </dict>
 </plist>

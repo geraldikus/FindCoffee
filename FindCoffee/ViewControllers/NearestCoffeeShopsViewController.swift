@@ -175,7 +175,12 @@ extension NearestCoffeeShopsViewController: UITableViewDelegate, UITableViewData
         print("ID: \(location.id)")
         print("Distance: \(location.point.latitude)")
         
+        let menuViewController = MenuViewController(token: token, locationID: location.id)
+        menuViewController.idText = "\(location.id)"
+        
         tableView.deselectRow(at: indexPath, animated: true)
+        
+        navigationController?.pushViewController(menuViewController, animated: true)
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {

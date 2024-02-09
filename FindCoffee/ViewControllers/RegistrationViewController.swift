@@ -18,7 +18,11 @@ class RegistrationViewController: UIViewController, UITextFieldDelegate {
     lazy var repeatPasswordLabel = makeLabel(text: "Повторите пароль")
     lazy var repeatPasswordTextField = makeTextField(placeholder: "******")
     
-    let emailStackView: UIStackView = {
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    private let emailStackView: UIStackView = {
         let stack = UIStackView()
         stack.alignment = .leading
         stack.axis = .vertical
@@ -27,7 +31,7 @@ class RegistrationViewController: UIViewController, UITextFieldDelegate {
         return stack
     }()
     
-    let passwordStackView: UIStackView = {
+    private let passwordStackView: UIStackView = {
         let stack = UIStackView()
         stack.alignment = .leading
         stack.axis = .vertical
@@ -36,7 +40,7 @@ class RegistrationViewController: UIViewController, UITextFieldDelegate {
         return stack
     }()
     
-    let repeatPasswordStackView: UIStackView = {
+    private let repeatPasswordStackView: UIStackView = {
         let stack = UIStackView()
         stack.alignment = .leading
         stack.axis = .vertical
@@ -45,17 +49,18 @@ class RegistrationViewController: UIViewController, UITextFieldDelegate {
         return stack
     }()
     
-    let registrationButton: UIButton = {
+    private lazy var registrationButton: UIButton = {
         let button = UIButton()
         button.backgroundColor = UIColor.buttonBackgroundColor
         button.setTitle("Регистрация", for: .normal)
         button.setTitleColor(.buttonTitleColor, for: .normal)
         button.layer.cornerRadius = 20
+        button.addTarget(self, action: #selector(registrationButtonTapped), for: .touchUpInside)
         
         return button
     }()
     
-    let registrationStackView: UIStackView = {
+    private let registrationStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .vertical
         stack.spacing = 20
@@ -74,6 +79,8 @@ class RegistrationViewController: UIViewController, UITextFieldDelegate {
     }
     
     private func setupView() {
+     //   passwordTextField.isSecureTextEntry = true
+
         emailTextField.delegate = self
         passwordTextField.delegate = self
         repeatPasswordTextField.delegate = self
@@ -100,7 +107,6 @@ class RegistrationViewController: UIViewController, UITextFieldDelegate {
     }
     
     private func setupConstraints() {
-        // Расположение emailStackView по центру экрана
 
         emailTextField.snp.makeConstraints { make in
             make.width.equalTo(emailStackView)
@@ -144,6 +150,12 @@ class RegistrationViewController: UIViewController, UITextFieldDelegate {
         return true
     }
     
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        if textField == emailTextField {
+            textField.autocapitalizationType = .none
+        }
+    }
+    
     private func keyboardAnimation() {
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
@@ -162,30 +174,58 @@ class RegistrationViewController: UIViewController, UITextFieldDelegate {
             self.view.frame.origin.y = 0
         }
     }
+    
+    @objc func registrationButtonTapped() {
+        guard let email = emailTextField.text, let password = passwordTextField.text else { return }
+        
+        Network.shared.register(email: email, password: password) { result in
+            switch result {
+            case .success:
+                self.login(email: email, password: password)
+                print("Register success")
+            case .failure(let error):
+                print("Registration failed with error: \(error)")
+            }
+        }
+    }
 
+    private func login(email: String, password: String) {
+        Network.shared.login(email: email, password: password) { result in
+            switch result {
+            case .success(let authResponse):
+                print("Login succes")
+                DispatchQueue.main.async {
+                    let nearestCoffeeShopsViewController = NearestCoffeeShopsViewController(token: authResponse.token)
+                    self.navigationController?.pushViewController(nearestCoffeeShopsViewController, animated: true)
+                }
+            case .failure(let error):
+                print("Authentication failed with error: \(error)")
+            }
+        }
+    }
 }
 
 // MARK: - For Canvas
 
-struct ViewRepreset: UIViewControllerRepresentable {
-    
-    func makeUIViewController(context: Context) -> some UIViewController {
-        return RegistrationViewController()
-    }
-    
-    func updateUIViewController(_ uiViewController: UIViewControllerType, context: UIViewControllerRepresentableContext<ViewRepreset>) {
-        
-    }
-    
-}
-
-struct CanvasView: View {
-    var body: some View {
-        ViewRepreset()
-    }
-}
-
-#Preview {
-    CanvasView()
-}
+//struct ViewRepreset: UIViewControllerRepresentable {
+//    
+//    func makeUIViewController(context: Context) -> some UIViewController {
+//        return RegistrationViewController()
+//    }
+//    
+//    func updateUIViewController(_ uiViewController: UIViewControllerType, context: UIViewControllerRepresentableContext<ViewRepreset>) {
+//        
+//    }
+//    
+//}
+//
+//struct CanvasView: View {
+//    var body: some View {
+//        ViewRepreset()
+//    }
+//}
+//
+//#Preview {
+//    CanvasView()
+//}
 
