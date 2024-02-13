@@ -68,7 +68,7 @@ class MenuViewController: UIViewController {
         setupCollectionView()
         view.addSubview(toPaymentButton)
         setupConstraints()
-        fetchLocations()
+        fetchMenu()
     }
     
     private func setupCollectionView() {
@@ -104,55 +104,26 @@ class MenuViewController: UIViewController {
         }
     }
     
-    private func fetchLocations() {
+    private func fetchMenu() {
         guard let locationID = locationID else {
             print("No location ID specified")
             return
         }
 
-        let urlString = "http://147.78.66.203:3210/location/\(locationID)/menu"
-        guard let url = URL(string: urlString) else {
-            print("Invalid URL for menu")
-            return
-        }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
+        Network.shared.fetchMenu(locationID: locationID, token: token) { [weak self] result in
             guard let self = self else { return }
-            
-            if let error = error {
-                print("Error fetching locations: \(error)")
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                print("Invalid response")
-                return
-            }
-            
-            guard let data = data else {
-                print("No data received")
-                return
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                let menu = try decoder.decode([Menu].self, from: data)
+
+            switch result {
+            case .success(let menu):
                 print("Menu: \(menu)")
-                
                 self.data = menu
-                
                 DispatchQueue.main.async {
                     self.collectionView.reloadData()
                 }
-            } catch {
-                print("Error decoding locations: \(error)")
+            case .failure(let error):
+                print("Error fetching menu: \(error)")
             }
-        }.resume()
+        }
     }
     
     func fetchImage(from urlString: String, completion: @escaping (UIImage?) -> Void) {
@@ -241,9 +212,6 @@ extension MenuViewController: UICollectionViewDelegate, UICollectionViewDataSour
             cell.countLabel.text = "\(count)"
             self.cartDelegate?.updateCart(menuItemId: menuItem, count: count)
         }
-        
-
-
 
         return cell
     }

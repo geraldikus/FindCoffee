@@ -51,7 +51,6 @@ final class CartViewController: UIViewController, CartDelegate {
         tableView.delegate = self
         tableView.dataSource = self
         
-        
         view.addSubview(tableView)
         setupConstraints()
     }
@@ -66,14 +65,19 @@ final class CartViewController: UIViewController, CartDelegate {
         if !data.contains(menuItem) {
             data.append(menuItem)
         }
-        tableView.reloadData()
-    }
-    
-    func updateCart(menuItemId: Menu, count: Int) {
-        counts[menuItemId] = count
+        counts[menuItem] = count
         tableView.reloadData()
     }
 
+    func updateCart(menuItemId: Menu, count: Int) {
+        if count == 0 {
+            counts.removeValue(forKey: menuItemId)
+            data = data.filter { $0 != menuItemId }
+        } else {
+            counts[menuItemId] = count
+        }
+        tableView.reloadData()
+    }
 }
 
 extension CartViewController: UITableViewDelegate, UITableViewDataSource {
@@ -102,17 +106,21 @@ extension CartViewController: UITableViewDelegate, UITableViewDataSource {
         }
         
         cell.decreaseCountAction = { [weak self] in
-            guard let self = self else { return }
+            guard let self = self, let indexPath = self.tableView.indexPath(for: cell) else { return }
             guard let menu = self.data[safe: indexPath.row] else { return }
-            var count = self.counts[menu] ?? 0
-            if count > 0 {
+            if var count = self.counts[menu], count > 0 {
                 count -= 1
-                self.counts[menu] = count
-                cell.countLabel.text = "\(count)"
+                if count == 0 {
+                    self.counts.removeValue(forKey: menu)
+                    self.data.remove(at: indexPath.row)
+                    self.tableView.deleteRows(at: [indexPath], with: .automatic)
+                } else {
+                    self.counts[menu] = count
+                    cell.countLabel.text = "\(count)"
+                }
             }
         }
 
-        
         return cell
     }
     
@@ -135,6 +143,10 @@ extension CartViewController: UITableViewDelegate, UITableViewDataSource {
         footerLabel.textColor = .cartTextColor
         
         return footerLabel
+    }
+
+    func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
+        return .none
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

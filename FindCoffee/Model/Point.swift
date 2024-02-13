@@ -40,6 +40,3 @@ struct Point: Decodable {
     }
 }
 
-struct BigDecimal: Codable {
-
-}

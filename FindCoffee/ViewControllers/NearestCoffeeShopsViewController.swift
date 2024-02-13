@@ -83,51 +83,20 @@ class NearestCoffeeShopsViewController: UIViewController {
         }
     }
     
-    
     private func fetchLocations() {
-        let urlString = "http://147.78.66.203:3210/locations"
-        guard let url = URL(string: urlString) else { return }
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.addValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        print("Authorization token: \(token)")
-        
-        URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
-            guard let self = self else { return }
-            
-            if let error = error {
-                print("Error fetching locations: \(error)")
-                return
-            }
-            
-            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                print("Invalid response")
-                return
-            }
-            
-            guard let data = data else {
-                print("No data received")
-                return
-            }
-            
-            do {
-                let decoder = JSONDecoder()
-                decoder.keyDecodingStrategy = .convertFromSnakeCase
-                let locations = try decoder.decode([Location].self, from: data)
-                print("Locations: \(locations)")
-                
+        Network.shared.fetchLocations(token: token) { result in
+            switch result {
+            case .success(let locations):
                 self.data = locations
-                
                 DispatchQueue.main.async {
                     self.tableView.reloadData()
                 }
-            } catch {
-                print("Error decoding locations: \(error)")
+            case .failure(let error):
+                print("Error fetching locations: \(error)")
             }
-        }.resume()
+        }
     }
+
     
     @objc func mapButtonTapped() {
         print("Map button tapped")
