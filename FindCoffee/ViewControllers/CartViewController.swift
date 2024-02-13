@@ -16,9 +16,11 @@ final class CartViewController: UIViewController, CartDelegate {
     var locationId: Int?
     
     var data: [Menu]
+    var counts: [Menu: Int] = [:]
     
-    init(selectedItems: [Menu]) { // Обновленный инициализатор с передачей count
+    init(selectedItems: [Menu], counts: [Menu: Int]) {
         self.data = selectedItems
+        self.counts = counts
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -71,6 +73,14 @@ final class CartViewController: UIViewController, CartDelegate {
         }
         tableView.reloadData()
     }
+    
+    func updateCart(menuItemId: Menu, count: Int) {
+        // Обновление counts
+        counts[menuItemId] = count
+
+           // Обновляем представление
+        tableView.reloadData()
+    }
 
 }
 
@@ -87,7 +97,8 @@ extension CartViewController: UITableViewDelegate, UITableViewDataSource {
 
         cell.title.text = menu.name
         cell.priceLabel.text = "\(menu.price)руб"
-        cell.countLabel.text = "2"
+        print("Count for indexPath \(indexPath): \(counts[menu] ?? 228)")
+        cell.countLabel.text = "\(counts[menu] ?? 228)"
         
         return cell
     }

@@ -9,6 +9,7 @@ import UIKit
 
 protocol CartDelegate: AnyObject {
     func addToCart(menuItem: Menu, count: Int)
+    func updateCart(menuItemId: Menu, count: Int)
 }
 
 class MenuViewController: UIViewController {
@@ -20,10 +21,12 @@ class MenuViewController: UIViewController {
     let layout = UICollectionViewFlowLayout()
     private let sectionInsets = UIEdgeInsets(top: 0, left: 1, bottom: 0, right: 1)
     var idText: String?
-    var counts: [IndexPath: Int] = [:]
+    var counts: [Menu: Int] = [:]
     
     weak var cartDelegate: CartDelegate?
     var selectedItems: [Menu] = []
+    
+    var selectedCounts: [Menu: Int] = [:]
     
     var dataUpdatedHandler: (([Menu]) -> Void)?
     
@@ -181,24 +184,15 @@ class MenuViewController: UIViewController {
     }
 
     @objc func toPaymentButtonTapped() {
-        let selectedItems = counts.compactMap { indexPath, count -> Menu? in
-            guard count > 0 else { return nil }
-            return data[indexPath.item]
+        let selectedItems = selectedCounts.compactMap { menuItem, count -> Menu? in
+            return menuItem
         }
         
-        let newCartVC = CartViewController(selectedItems: selectedItems)
+        let newCartVC = CartViewController(selectedItems: selectedItems, counts: selectedCounts)
         newCartVC.token = token
         newCartVC.locationId = locationID
+        newCartVC.counts = selectedCounts // Используйте cartCounts для отображения в CartViewController
         navigationController?.pushViewController(newCartVC, animated: true)
-    }
-
-    
-    func removeFromSelectedItems(at indexPath: IndexPath) {
-        guard indexPath.row < data.count else {
-            print("Index out of range")
-            return
-        }
-        data.remove(at: indexPath.row)
     }
 
 }
@@ -223,16 +217,18 @@ extension MenuViewController: UICollectionViewDelegate, UICollectionViewDataSour
         cell.name.text = menu.name
         cell.priceLabel.text = "\(menu.price)руб"
         
-        cell.countLabel.text = "\(counts[indexPath] ?? 0)"
+        cell.countLabel.text = "\(counts[menu] ?? 0)"
         
         cell.addToCartAction = { [weak self] in
             guard let self = self else { return }
             let menuItem = self.data[indexPath.item]
-            let count = self.counts[indexPath] ?? 0
-            self.counts[indexPath] = count + 1 // Увеличиваем счетчик
-            self.collectionView.reloadItems(at: [indexPath]) // Перезагружаем ячейку, чтобы обновить отображение счетчика
-            self.cartDelegate?.addToCart(menuItem: menuItem, count: count + 1) // Передаем обновленное количество в делегат
+            var count = self.selectedCounts[menuItem] ?? 0
+            count += 1
+            self.selectedCounts[menuItem] = count
+            cell.countLabel.text = "\(count)"
+            self.cartDelegate?.updateCart(menuItemId: menuItem, count: count) // Обновление корзины через делегата
         }
+
 
         return cell
     }
