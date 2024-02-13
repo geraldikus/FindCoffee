@@ -19,6 +19,8 @@ class LoginViewController: UIViewController, UITextFieldDelegate, CLLocationMana
     lazy var passwordTextField = makeTextField(placeholder: "******")
     
     
+    let activityIndicator = UIActivityIndicatorView(style: .medium)
+    
     private lazy var loginButton: UIButton = {
         let button = UIButton()
         button.backgroundColor = UIColor.buttonBackgroundColor
@@ -73,6 +75,9 @@ class LoginViewController: UIViewController, UITextFieldDelegate, CLLocationMana
         emailTextField.delegate = self
         passwordTextField.delegate = self
         keyboardAnimation()
+        
+        activityIndicator.center = view.center
+        view.addSubview(activityIndicator)
         
         view.addSubview(loginStackView)
     }
@@ -167,9 +172,20 @@ class LoginViewController: UIViewController, UITextFieldDelegate, CLLocationMana
     }
     
     @objc func loginButtonTapped() {
+        
+        DispatchQueue.main.async {
+            self.activityIndicator.startAnimating()
+        }
+        
         guard let email = emailTextField.text, let password = passwordTextField.text else { return }
         
         Network.shared.login(email: email, password: password) { result in
+            
+            DispatchQueue.main.async {
+                self.activityIndicator.stopAnimating()
+                self.activityIndicator.removeFromSuperview()
+            }
+            
             switch result {
             case .success(let authResponse):
                 print("Login succes")
@@ -179,6 +195,12 @@ class LoginViewController: UIViewController, UITextFieldDelegate, CLLocationMana
                 }
             case .failure(let error):
                 print("Authentication failed with error: \(error)")
+                DispatchQueue.main.async {
+                    let alertController = UIAlertController(title: "Ошибка", message: "Логин или пароль не верны. Попробуйте еще раз.", preferredStyle: .alert)
+                    let okAction = UIAlertAction(title: "OK", style: .default, handler: nil)
+                    alertController.addAction(okAction)
+                    self.present(alertController, animated: true, completion: nil)
+                }
             }
         }
     }

@@ -7,7 +7,6 @@
 
 import UIKit
 import SnapKit
-import SwiftUI
 
 class RegistrationViewController: UIViewController, UITextFieldDelegate {
     
@@ -17,10 +16,6 @@ class RegistrationViewController: UIViewController, UITextFieldDelegate {
     lazy var passwordTextField = makeTextField(placeholder: "******")
     lazy var repeatPasswordLabel = makeLabel(text: "Повторите пароль")
     lazy var repeatPasswordTextField = makeTextField(placeholder: "******")
-    
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
     
     private let emailStackView: UIStackView = {
         let stack = UIStackView()
@@ -79,7 +74,8 @@ class RegistrationViewController: UIViewController, UITextFieldDelegate {
     }
     
     private func setupView() {
-     //   passwordTextField.isSecureTextEntry = true
+        passwordTextField.isSecureTextEntry = true
+        repeatPasswordTextField.isSecureTextEntry = true
 
         emailTextField.delegate = self
         passwordTextField.delegate = self
@@ -176,7 +172,15 @@ class RegistrationViewController: UIViewController, UITextFieldDelegate {
     }
     
     @objc func registrationButtonTapped() {
-        guard let email = emailTextField.text, let password = passwordTextField.text else { return }
+        guard let email = emailTextField.text, let password = passwordTextField.text, passwordTextField.text == repeatPasswordTextField.text else {
+            DispatchQueue.main.async {
+                let alertController = UIAlertController(title: "Ошибка", message: "Пароли должны совпадать.", preferredStyle: .alert)
+                let okAction = UIAlertAction(title: "OK", style: .default, handler: nil)
+                alertController.addAction(okAction)
+                self.present(alertController, animated: true, completion: nil)
+            }
+            return
+        }
         
         Network.shared.register(email: email, password: password) { result in
             switch result {
@@ -185,6 +189,12 @@ class RegistrationViewController: UIViewController, UITextFieldDelegate {
                 print("Register success")
             case .failure(let error):
                 print("Registration failed with error: \(error)")
+                DispatchQueue.main.async {
+                    let alertController = UIAlertController(title: "Ошибка", message: "Что-то пошло не так. Попробуйте еще раз.", preferredStyle: .alert)
+                    let okAction = UIAlertAction(title: "OK", style: .default, handler: nil)
+                    alertController.addAction(okAction)
+                    self.present(alertController, animated: true, completion: nil)
+                }
             }
         }
     }
@@ -204,28 +214,4 @@ class RegistrationViewController: UIViewController, UITextFieldDelegate {
         }
     }
 }
-
-// MARK: - For Canvas
-
-//struct ViewRepreset: UIViewControllerRepresentable {
-//    
-//    func makeUIViewController(context: Context) -> some UIViewController {
-//        return RegistrationViewController()
-//    }
-//    
-//    func updateUIViewController(_ uiViewController: UIViewControllerType, context: UIViewControllerRepresentableContext<ViewRepreset>) {
-//        
-//    }
-//    
-//}
-//
-//struct CanvasView: View {
-//    var body: some View {
-//        ViewRepreset()
-//    }
-//}
-//
-//#Preview {
-//    CanvasView()
-//}
 
