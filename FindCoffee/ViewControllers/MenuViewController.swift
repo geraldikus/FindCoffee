@@ -191,7 +191,7 @@ class MenuViewController: UIViewController {
         let newCartVC = CartViewController(selectedItems: selectedItems, counts: selectedCounts)
         newCartVC.token = token
         newCartVC.locationId = locationID
-        newCartVC.counts = selectedCounts // Используйте cartCounts для отображения в CartViewController
+        newCartVC.counts = selectedCounts 
         navigationController?.pushViewController(newCartVC, animated: true)
     }
 
@@ -219,15 +219,30 @@ extension MenuViewController: UICollectionViewDelegate, UICollectionViewDataSour
         
         cell.countLabel.text = "\(counts[menu] ?? 0)"
         
-        cell.addToCartAction = { [weak self] in
+        cell.cartAction = { [weak self] isAddAction in
             guard let self = self else { return }
             let menuItem = self.data[indexPath.item]
             var count = self.selectedCounts[menuItem] ?? 0
-            count += 1
-            self.selectedCounts[menuItem] = count
+            
+            if isAddAction {
+                count += 1
+            } else {
+                if count > 0 {
+                    count -= 1
+                }
+            }
+            
+            if count == 0 {
+                self.selectedCounts.removeValue(forKey: menuItem)
+            } else {
+                self.selectedCounts[menuItem] = count
+            }
+            
             cell.countLabel.text = "\(count)"
-            self.cartDelegate?.updateCart(menuItemId: menuItem, count: count) // Обновление корзины через делегата
+            self.cartDelegate?.updateCart(menuItemId: menuItem, count: count)
         }
+        
+
 
 
         return cell

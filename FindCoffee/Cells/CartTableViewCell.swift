@@ -11,6 +11,9 @@ class CartTableViewCell: UITableViewCell {
     
     static let reuseId = "CartCell"
     
+    var increaseCountAction: (() -> Void)?
+    var decreaseCountAction: (() -> Void)?
+    
     private let bacgroundView: UIView = {
         let view = UIView()
         view.backgroundColor = UIColor.tableViewBackgoundColor
@@ -44,6 +47,7 @@ class CartTableViewCell: UITableViewCell {
         button.setTitle("-", for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 20, weight: .bold)
         button.setTitleColor(.cartTextColor, for: .normal)
+        button.addTarget(self, action: #selector(minusButtonAction), for: .touchUpInside)
         
         return button
     }()
@@ -53,6 +57,7 @@ class CartTableViewCell: UITableViewCell {
         button.setTitle("+", for: .normal)
         button.titleLabel?.font = .systemFont(ofSize: 20, weight: .bold)
         button.setTitleColor(.cartTextColor, for: .normal)
+        button.addTarget(self, action: #selector(plusButtonAction), for: .touchUpInside)
         
         return button
     }()
@@ -109,6 +114,14 @@ class CartTableViewCell: UITableViewCell {
             make.centerY.equalToSuperview()
             make.right.equalToSuperview().inset(5)
         }
+    }
+    
+    @objc func plusButtonAction() {
+        increaseCountAction?()
+    }
+
+    @objc func minusButtonAction() {
+        decreaseCountAction?()
     }
     
     override func awakeFromNib() {

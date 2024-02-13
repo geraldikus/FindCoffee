@@ -39,11 +39,6 @@ final class CartViewController: UIViewController, CartDelegate {
             self?.data = updatedData
             self?.tableView.reloadData()
         }
-        
-        print("TOKEN: \(token)")
-        print("LocationID: \(locationId)")
-        
-        print("Data: \(data)")
     }
     
     private func setupView() {
@@ -75,10 +70,7 @@ final class CartViewController: UIViewController, CartDelegate {
     }
     
     func updateCart(menuItemId: Menu, count: Int) {
-        // Обновление counts
         counts[menuItemId] = count
-
-           // Обновляем представление
         tableView.reloadData()
     }
 
@@ -98,24 +90,55 @@ extension CartViewController: UITableViewDelegate, UITableViewDataSource {
         cell.title.text = menu.name
         cell.priceLabel.text = "\(menu.price)руб"
         print("Count for indexPath \(indexPath): \(counts[menu] ?? 228)")
-        cell.countLabel.text = "\(counts[menu] ?? 228)"
+        cell.countLabel.text = "\(counts[menu] ?? 0)"
+        
+        cell.increaseCountAction = { [weak self] in
+            guard let self = self else { return }
+            guard let menu = self.data[safe: indexPath.row] else { return }
+            var count = self.counts[menu] ?? 0
+            count += 1
+            self.counts[menu] = count
+            cell.countLabel.text = "\(count)"
+        }
+        
+        cell.decreaseCountAction = { [weak self] in
+            guard let self = self else { return }
+            guard let menu = self.data[safe: indexPath.row] else { return }
+            var count = self.counts[menu] ?? 0
+            if count > 0 {
+                count -= 1
+                self.counts[menu] = count
+                cell.countLabel.text = "\(count)"
+            }
+        }
+
         
         return cell
     }
-
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return 71
     }
     
     func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
-        footerLabel.text = "Время ожидания заказа 15 минут. Спасибо, что выбрали нас!"
+        
+        if !counts.isEmpty {
+            footerLabel.text = "Время ожидания заказа 15 минут. Спасибо, что выбрали нас!"
+        } else {
+            footerLabel.text = "К сожалению, ваша корзина пуста."
+        }
+        
         footerLabel.numberOfLines = 0
         footerLabel.backgroundColor = .white
         footerLabel.textAlignment = .center
         footerLabel.font = .systemFont(ofSize: 24)
         footerLabel.textColor = .cartTextColor
+        
         return footerLabel
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        tableView.deselectRow(at: indexPath, animated: true)
     }
     
     func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {

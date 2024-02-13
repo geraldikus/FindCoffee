@@ -30,7 +30,7 @@ class MenuCollectionViewCell: UICollectionViewCell {
     
     var indexPath: IndexPath?
     
-    var addToCartAction: (() -> Void)?
+    var cartAction: ((Bool) -> Void)?
     
     let activityIndicatorView: UIActivityIndicatorView = {
         let indicatorView = UIActivityIndicatorView(style: .medium)
@@ -151,14 +151,14 @@ class MenuCollectionViewCell: UICollectionViewCell {
     @objc func minusButtonTapped() {
         if count > 0 {
             count -= 1
-            addToCartAction?()
+            cartAction?(false)
         }
     }
 
 
     @objc func plusButtonTapped() {
         count += 1
-        addToCartAction?()
+        cartAction?(true)
     }
 
     
