@@ -8,6 +8,7 @@
 import UIKit
 
 class MenuCollectionViewCell: UICollectionViewCell {
+    
     static let reuseId = "MenuCell"
     
     let view = UIView()
@@ -18,12 +19,18 @@ class MenuCollectionViewCell: UICollectionViewCell {
         
         return image
     }()
-
+    
     var count: Int = 0 {
         didSet {
             countLabel.text = "\(count)"
         }
     }
+    
+    weak var menuVC: MenuViewController?
+    
+    var indexPath: IndexPath?
+    
+    var addToCartAction: (() -> Void)?
     
     let activityIndicatorView: UIActivityIndicatorView = {
         let indicatorView = UIActivityIndicatorView(style: .medium)
@@ -144,12 +151,16 @@ class MenuCollectionViewCell: UICollectionViewCell {
     @objc func minusButtonTapped() {
         if count > 0 {
             count -= 1
+            addToCartAction?()
         }
     }
-    
+
+
     @objc func plusButtonTapped() {
         count += 1
+        addToCartAction?()
     }
+
     
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")

@@ -7,6 +7,10 @@
 
 import UIKit
 
+protocol CartDelegate: AnyObject {
+    func addToCart(menuItem: Menu, count: Int)
+}
+
 class MenuViewController: UIViewController {
     
     private let token: String
@@ -17,6 +21,11 @@ class MenuViewController: UIViewController {
     private let sectionInsets = UIEdgeInsets(top: 0, left: 1, bottom: 0, right: 1)
     var idText: String?
     var counts: [IndexPath: Int] = [:]
+    
+    weak var cartDelegate: CartDelegate?
+    var selectedItems: [Menu] = []
+    
+    var dataUpdatedHandler: (([Menu]) -> Void)?
     
     init(token: String, locationID: Int) {
         self.token = token
@@ -60,7 +69,6 @@ class MenuViewController: UIViewController {
     }
     
     private func setupCollectionView() {
-        //layout.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
         layout.minimumLineSpacing = 10
         layout.minimumInteritemSpacing = 10
         layout.itemSize = CGSize(width: 200, height: 300)
@@ -173,24 +181,25 @@ class MenuViewController: UIViewController {
     }
 
     @objc func toPaymentButtonTapped() {
-        print("Go to payment")
+        let selectedItems = counts.compactMap { indexPath, count -> Menu? in
+            guard count > 0 else { return nil }
+            return data[indexPath.item]
+        }
+        
+        let newCartVC = CartViewController(selectedItems: selectedItems)
+        newCartVC.token = token
+        newCartVC.locationId = locationID
+        navigationController?.pushViewController(newCartVC, animated: true)
     }
+
     
-//    @objc func minusButtonTapped(indexPath: IndexPath) {
-//        if var count = counts[indexPath], count > 0 {
-//            count -= 1
-//            counts[indexPath] = count
-//            collectionView.reloadItems(at: [indexPath]) // Reload the specific cell
-//        }
-//    }
-//
-//    @objc func plusButtonTapped(indexPath: IndexPath) {
-//        if var count = counts[indexPath] {
-//            count += 1
-//            counts[indexPath] = count
-//            collectionView.reloadItems(at: [indexPath]) // Reload the specific cell
-//        }
-//    }
+    func removeFromSelectedItems(at indexPath: IndexPath) {
+        guard indexPath.row < data.count else {
+            print("Index out of range")
+            return
+        }
+        data.remove(at: indexPath.row)
+    }
 
 }
 
@@ -207,16 +216,27 @@ extension MenuViewController: UICollectionViewDelegate, UICollectionViewDataSour
         }
         
         let menu = data[indexPath.item]
-        print("MENU frov CollectionView: \(menu.name)")
+        print("MENU from CollectionView: \(menu.name)")
         
         loadImage(for: cell, from: menu.imageURL)
+        cell.indexPath = indexPath
         cell.name.text = menu.name
         cell.priceLabel.text = "\(menu.price)руб"
+        
         cell.countLabel.text = "\(counts[indexPath] ?? 0)"
         
-        return cell
+        cell.addToCartAction = { [weak self] in
+            guard let self = self else { return }
+            let menuItem = self.data[indexPath.item]
+            let count = self.counts[indexPath] ?? 0
+            self.counts[indexPath] = count + 1 // Увеличиваем счетчик
+            self.collectionView.reloadItems(at: [indexPath]) // Перезагружаем ячейку, чтобы обновить отображение счетчика
+            self.cartDelegate?.addToCart(menuItem: menuItem, count: count + 1) // Передаем обновленное количество в делегат
+        }
 
+        return cell
     }
+
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let flowayout = collectionViewLayout as? UICollectionViewFlowLayout
@@ -228,4 +248,7 @@ extension MenuViewController: UICollectionViewDelegate, UICollectionViewDataSour
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
         return sectionInsets
     }
+    
 }
+
+

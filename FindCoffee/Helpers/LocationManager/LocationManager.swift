@@ -43,7 +43,7 @@ class LocationManager: NSObject, CLLocationManagerDelegate {
         guard let userLocation = userLocation else { return nil }
         
         let coffeeLocation = CLLocation(latitude: coffeeLatitude, longitude: coffeeLongitude)
-        return userLocation.distance(from: coffeeLocation) / 1000 // расстояние в километрах
+        return userLocation.distance(from: coffeeLocation) / 1000 
     }
 }
 
